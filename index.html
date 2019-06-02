@@ -7,8 +7,15 @@
     <title>Photo editor</title>
 
     <link href="style.css" rel="stylesheet" />
+    <script src="https://use.fontawesome.com/bbee31a040.js"></script>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+
+    <script src="colorpicker/jquery.colorPicker.js"></script>
+    <script src="cropper/cropper.js"></script>
+
+    <link href="colorpicker/colorPicker.css"  rel="stylesheet"/>
+    <link href="cropper/cropper.css"  rel="stylesheet"/>
   </head>
   <body>
     <div class="container">
@@ -40,18 +47,338 @@
       </form>
     </div>
 
-
     <div id="modal" class="modal">
       <div class="modal-content">
         <div class="modal-header">
-            <button class="close">cancel</button>
-            <button class="save">save</button>
+          <button class="close">cancel</button>
+          <div class="zoom-block">
+            <button onclick="zoomout()">-</button>
+            <div class="zoom-text">
+              <span>
+                zoom
+              </span>
+              <span id="zoom-percent"></span>
+            </div>
+
+            <button onclick="zoomin()">+</button>
+          </div>
+          <button class="save" onclick="save()">
+            <i class="fa fa-upload" aria-hidden="true"></i>
+            save
+          </button>
         </div>
         <div class="modal-body">
+          <div style="position: relative;">
             <img src="" id="modalImg" width="300" class="image-preview" /><br />
+            <span id="text-1"></span>
+            <img src="" id="stickerContainer">
+            <canvas id='myCanvas'></canvas>            
+          </div>
+          
+          <div id="crop-menu" class="sub-menu">
+            <div class="crop-menu">
+              <button onclick="cropRatio(1, 1)" id="crop">Crop</button>
+              <button onclick="cropRatio(4, 5)">4:5</button>
+              <button onclick="cropRatio(4, 3)">4:3</button>
+              <button onclick="cropRatio(16, 9)" data-original-title="aspectRatio: 16 / 9">16:9</button>
+              <button onclick="cropRatio(9, 16)" >9:16</button>
+              <button onclick="mirrorImg()">Mirror image</button>
+              <button onclick="flipImg()">Flip image</button>
+              <i class="fa fa-undo fa-2x" id="rotate-left"></i>
+              <i class="fa fa-repeat fa-2x" id="rotate-right"></i>
+            </div>
+          </div>
+          <div id="filter-menu" class="sub-menu">
+            <div class="sliders">
+              <form id="imageEditor">
+                <p>
+                  <label for="invert">Invert</label>
+                  <input
+                    id="invert"
+                    name="invert"
+                    type="range"
+                    min="0"
+                    max="100"
+                    value="0"
+                  />
+                </p>
+                <p>
+                  <label for="sepia">Sepia</label>
+                  <input
+                    id="sepia"
+                    name="sepia"
+                    type="range"
+                    min="0"
+                    max="100"
+                    value="0"
+                  />
+                </p>
+                
+              </form>
+            </div>
+          </div>
+          <div id="adjustment-menu" class="sub-menu">
+            <div class="sliders">
+              <form id="imageEditor">
+                <p>
+                  <label for="gs">Grayscale</label>
+                  <input
+                    id="gs"
+                    name="gs"
+                    type="range"
+                    min="0"
+                    max="100"
+                    value="0"
+                  />
+                </p>
+                <p>
+                  <label for="br">Exposure</label>
+                  <input
+                    id="br"
+                    name="br"
+                    type="range"
+                    min="0"
+                    max="200"
+                    value="100"
+                  />
+                </p>
+                <p>
+                  <label for="ct">Contrast</label>
+                  <input
+                    id="ct"
+                    name="ct"
+                    type="range"
+                    min="0"
+                    max="200"
+                    value="100"
+                  />
+                </p>
+
+                <p>
+                  <label for="huer">Hue Rotate</label>
+                  <input
+                    id="huer"
+                    name="huer"
+                    type="range"
+                    min="0"
+                    max="360"
+                    value="0"
+                  />
+                </p>
+
+                <p>
+                  <label for="opacity">Opacity</label>
+                  <input
+                    id="opacity"
+                    name="opacity"
+                    type="range"
+                    min="0"
+                    max="100"
+                    value="100"
+                  />
+                </p>
+                <p>
+                  <label for="saturate">Saturate</label>
+                  <input
+                    id="saturate"
+                    name="saturate"
+                    type="range"
+                    min="0"
+                    max="500"
+                    value="100"
+                  />
+                </p>
+                <p>
+                  <label for="blur">Blur</label>
+                  <input
+                    id="blur"
+                    name="blur"
+                    type="range"
+                    min="0"
+                    max="10"
+                    value="0"
+                  />
+                </p>
+              </form>
+            </div>
+          </div>
+          <div id="text-menu" class="sub-menu">
+            <div class="sliders">
+              <form id="imageEditor" style="flex-direction: column;">
+                <div>
+                  <p>
+                    <input type="text" name="text" id="text"/>
+                  </p>
+                </div>
+                <div class="flex-row">
+                  <p class="p-class">
+                    <label for="color2">Color</label>
+                    <input id="color2" type="text" name="color2" value="#333399" form="imageEditor"/>
+                  </p>
+                  <p class="p-class">
+                    <label for="fontSize">Font Size</label>
+                      <input
+                        id="fontSize"
+                        name="fontSize"
+                        type="range"
+                        min="0"
+                        max="100"
+                        value="12"
+                      />
+                  </p>
+                  <p class="p-class">
+                    <label for="positionX">Position X</label>
+                    <input
+                      id="positionX"
+                      name="positionX"
+                      type="range"
+                      min="0"
+                      max="100"
+                      value="12"
+                    />
+                  </p>
+                  <p class="p-class">
+                    <label for="positionY">Position Y</label>
+                    <input
+                      id="positionY"
+                      name="position"
+                      type="range"
+                      min="0"
+                      max="100"
+                      value="12"
+                    />
+                  </p>
+                  <p class="p-class">
+                    <label for="rotate">rotate</label><input
+                      id="rotate"
+                      name="rotate"
+                      type="range"
+                      min="0"
+                      max="360"
+                      value="0"
+                    />
+                  </p>
+                </div>
+                
+              </form>
+            </div>
+          </div>
+          <div id="sticker-menu" class="sub-menu">
+            <div class="stickers-container" id="stickers">
+              <img src="stickers/alien_hamlet.png" alt="sticker">
+              <img src="stickers/transparent-sticker-batman.png" alt="sticker">
+            </div>
+            <div class="flex-row">
+                <p class="p-class">
+                    <label for="stickerPositionX">Position X</label>
+                    <input
+                      id="stickerPositionX"
+                      name="stickerPositionX"
+                      type="range"
+                      min="0"
+                      max="100"
+                      value="0"
+                    />
+                  </p>
+                  <p class="p-class">
+                    <label for="stickerPositionY">Position Y</label>
+                    <input
+                      id="stickerPositionY"
+                      name="stickerPositionY"
+                      type="range"
+                      min="0"
+                      max="100"
+                      value="0"
+                    />
+                  </p>
+            </div>            
+          </div>
+          <div id="brush-menu" class="sub-menu">
+              
+            <p>
+              <label for="strokeSize">Frame Size</label>
+              <input
+                id="strokeSize"
+                name="strokeSize"
+                type="range"
+                min="1"
+                max="25"
+                value="0"
+              />
+              <input id="color3" type="text" name="color1" value="#333399" 
+              form="imageEditor"/>
+            </p>
+          </div>
+          <div id="focus-menu" class="sub-menu"></div>
+          <div id="frame-menu" class="sub-menu">
+            <form id="imageEditor">
+              <p>
+                <label for="frame-size">Frame Size</label>
+                <input
+                  id="frameSize"
+                  name="frameSize"
+                  type="range"
+                  min="0"
+                  max="10"
+                  value="0"
+                />
+                <input id="color1" type="text" name="color1" value="#333399" 
+                form="imageEditor"/>
+              </p>
+              </div>
+              <div class="reset-all-button">
+                <input
+                  type="reset"
+                  form="imageEditor"
+                  id="resetAll"
+                  value="Reset"
+                />
+              </div>
+            </form>
+          </div>
+          <div id="text-menu" class="sub-menu">
+            TEXT MENU
+          </div>
+          <div class="edit-toolbar">
+            <div class="tool-group">
+              <div onclick="openSubMenu('crop-menu')">
+                <i class="fa fa-crop fa-3x"></i>
+                <p>Crop</p>
+              </div>
+            </div>
+            <div class="tool-group">
+              <div onclick="openSubMenu('filter-menu')">
+                <i class="fa fa-magic fa-3x"></i>
+                <p>Filters</p>
+              </div>
+              <div onclick="openSubMenu('adjustment-menu')">
+                <i class="fa fa-sliders fa-3x"></i>
+                <p>Adjustments</p>
+              </div>
+            </div>
+            <div class="tool-group">
+              <div onclick="openSubMenu('text-menu')">
+                <i class="fa fa-text-width fa-3x"></i>
+                <p>Text</p>
+              </div>
+              <div onclick="openSubMenu('sticker-menu')">
+                <i class="fa fa-smile-o fa-3x"></i>
+                <p>Stickers</p>
+              </div>
+              <div onclick="openSubMenu('brush-menu')">
+                <i class="fa fa-paint-brush fa-3x"></i>
+                <p>Brush</p>
+              </div>
+            </div>
+            <div class="tool-group">
+              <div onclick="openSubMenu('frame-menu')">
+                <i class="fa fa-window-maximize fa-3x"></i>
+                <p>Frames</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-    
     </div>
     <script src="index.js"></script>
   </body>
